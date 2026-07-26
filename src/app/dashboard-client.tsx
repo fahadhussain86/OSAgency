@@ -47,7 +47,7 @@ export default function DashboardClient({ membershipId, displayName, role, orgNa
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">A</span><span>AgencyOS</span></div>
       <div className="workspace"><span className="workspace-dot"/> {orgName} <span className="chevron">⌄</span></div>
-      <nav>{nav.map(([label, icon]) => <button onClick={() => { setActive(label); if (label !== "Overview") router.push(label === "Projects" || label === "My Projects" ? "/projects" : "/projects"); }} className={active === label ? "nav-item active" : "nav-item"} key={label}><Icon name={icon as IconName}/><span>{label}</span></button>)}</nav>
+      <nav>{nav.map(([label, icon]) => <button onClick={() => { setActive(label); if (label === "Projects" || label === "My Projects") router.push("/projects"); if (label === "Reports") router.push("/reports"); }} className={active === label ? "nav-item active" : "nav-item"} key={label}><Icon name={icon as IconName}/><span>{label}</span></button>)}</nav>
       <div className="sidebar-bottom"><button className="nav-item" onClick={() => setActive("Settings")}><Icon name="settings"/><span>Settings</span></button><div className="profile"><div className="avatar dark-avatar">{initials(displayName)}</div><div><strong>{firstName}</strong><small>{roleLabel[role]}</small></div><span className="dots">•••</span></div></div>
     </aside>
     <section className="content">
