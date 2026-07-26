@@ -9,8 +9,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { data: project } = await supabase.from("Project").select("id, organizationId").eq("id", projectId).single();
+  const { data: project } = await supabase.from("Project").select("id, organizationId, organization:Organization(featureFlags)").eq("id", projectId).single();
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  const org = Array.isArray(project.organization) ? project.organization[0] : project.organization;
+  const flags = (org as { featureFlags?: Record<string, boolean> } | undefined)?.featureFlags ?? {};
+  if (flags.chatEnabled === false) return NextResponse.json({ error: "Chat is disabled for this workspace" }, { status: 403 });
 
   const { data: membership } = await supabase.from("Membership").select("id").eq("organizationId", project.organizationId).eq("userId", user.id).eq("isActive", true).single();
   if (!membership) return NextResponse.json({ error: "Not a member of this workspace" }, { status: 403 });

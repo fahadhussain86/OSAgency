@@ -16,6 +16,10 @@ export default async function ReportsPage() {
   if (membership.role !== "SUPER_ADMIN" && membership.role !== "PROJECT_MANAGER") redirect("/");
 
   const orgId = membership.organizationId;
+  const { data: org } = await supabase.from("Organization").select("featureFlags").eq("id", orgId).single();
+  const flags = (org?.featureFlags ?? {}) as Record<string, boolean>;
+  if (flags.reportsEnabled === false) return <main className="min-h-screen bg-[#f7f8f6] px-5 py-10 text-[#202523]"><div className="mx-auto max-w-2xl"><Link href="/" className="text-sm font-bold text-[#286a5a]">&larr; Dashboard</Link><div className="mt-8 rounded-xl border border-[#e0e5e1] bg-white p-8 text-center"><h1 className="font-serif text-2xl">Reports is disabled</h1><p className="mt-2 text-sm text-[#718079]">Your Super Admin has turned off the Reports module for this workspace. Enable it under Settings &rsaquo; Branding &amp; features.</p></div></div></main>;
+
   const { data: projects } = await supabase.from("Project").select("id, name, status, priority, deadline, revisionCount, developerId").eq("organizationId", orgId);
   const all = projects ?? [];
 
