@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Role, initials, navByRole, roleLabel, timeAgo } from "@/lib/roles";
+import NotificationsBell from "./notifications-bell";
 
 export type ProjectRow = { id: string; name: string; clientName: string; status: string; priority: string; deadline: string | null; developerName: string | null };
 export type ActivityItem = { id: string; action: string; createdAt: string; projectName: string };
@@ -31,11 +32,10 @@ const palette = ["#f4b64c", "#e98b70", "#8ca6ed", "#9fc986", "#d69fe0", "#7fc4c9
 const statusLabel = (s: string) => s.replaceAll("_", " ").toLowerCase().replace(/^./, (c) => c.toUpperCase());
 const statusClass = (s: string) => s.toLowerCase().replaceAll("_", "-");
 
-export default function DashboardClient({ displayName, role, orgName, projects, activity, metrics, workload }: { displayName: string; role: Role; orgName: string; projects: ProjectRow[]; activity: ActivityItem[]; metrics: Metrics; workload: WorkloadRow[] }) {
+export default function DashboardClient({ membershipId, displayName, role, orgName, projects, activity, metrics, workload }: { membershipId: string; displayName: string; role: Role; orgName: string; projects: ProjectRow[]; activity: ActivityItem[]; metrics: Metrics; workload: WorkloadRow[] }) {
   const router = useRouter();
   const [active, setActive] = useState("Overview");
   const [dark, setDark] = useState(false);
-  const [notice, setNotice] = useState(false);
   const nav = navByRole[role];
   const isLead = role === "SUPER_ADMIN" || role === "PROJECT_MANAGER";
   const deadlines = projects.filter((p) => p.deadline).sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime()).slice(0, 3);
@@ -51,10 +51,10 @@ export default function DashboardClient({ displayName, role, orgName, projects, 
       <div className="sidebar-bottom"><button className="nav-item" onClick={() => setActive("Settings")}><Icon name="settings"/><span>Settings</span></button><div className="profile"><div className="avatar dark-avatar">{initials(displayName)}</div><div><strong>{firstName}</strong><small>{roleLabel[role]}</small></div><span className="dots">•••</span></div></div>
     </aside>
     <section className="content">
-      <header><div className="mobile-brand"><span className="brand-mark">A</span> AgencyOS</div><div className="search"><Icon name="search" size={18}/><span>Search projects, people, or files</span><kbd>⌘ K</kbd></div><div className="header-actions"><button className="icon-button" onClick={() => setDark(!dark)} aria-label="Toggle theme"><Icon name="sun" size={19}/></button><button className="icon-button notification" onClick={() => setNotice(!notice)} aria-label="Notifications"><Icon name="bell" size={19}/><i/></button>{role !== "DEVELOPER" && <button className="new-button" onClick={() => router.push("/projects/new")}><Icon name="plus" size={17}/> New project</button>}</div></header>
+      <header><div className="mobile-brand"><span className="brand-mark">A</span> AgencyOS</div><div className="search"><Icon name="search" size={18}/><span>Search projects, people, or files</span><kbd>⌘ K</kbd></div><div className="header-actions"><button className="icon-button" onClick={() => setDark(!dark)} aria-label="Toggle theme"><Icon name="sun" size={19}/></button><NotificationsBell membershipId={membershipId}/>{role !== "DEVELOPER" && <button className="new-button" onClick={() => router.push("/projects/new")}><Icon name="plus" size={17}/> New project</button>}</div></header>
       <div className="page">
         <div className="page-title"><div><p className="eyebrow">{today}</p><h1>Good morning, {firstName} <span>✦</span></h1><p className="subtitle">{role === "DEVELOPER" ? "Here's what's on your plate today." : "Here's what's happening across your agency."}</p></div><button className="text-button" onClick={() => router.push("/projects")}>View all projects <Icon name="arrow" size={16}/></button></div>
-        {notice && <div className="toast"><Icon name="shield" size={18}/><span>Privacy monitoring is active. No policy violations today.</span><button onClick={() => setNotice(false)}>×</button></div>}
+        {metrics.overdue > 0 && role !== "DEVELOPER" && <div className="toast"><Icon name="shield" size={18}/><span>{metrics.overdue} project{metrics.overdue === 1 ? " is" : "s are"} past its deadline and needs attention.</span></div>}
         <div className="metrics">
           <Metric value={String(metrics.active)} label={role === "DEVELOPER" ? "Your active projects" : "Active projects"}/>
           <Metric value={String(metrics.inReview)} label="In review"/>

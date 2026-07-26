@@ -28,7 +28,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (violations.length > 0) {
     await admin.from("AuditLog").insert({ id: crypto.randomUUID().replaceAll("-", ""), organizationId: project.organizationId, actorId: user.id, action: "chat_violation_blocked", entityType: "ChatMessage", entityId: messageId, metadata: { projectId, violations } });
-    // TODO(notifications phase): push a real-time/email alert to Super Admins here once the Notification model exists.
+    const { data: superAdmins } = await admin.from("Membership").select("id").eq("organizationId", project.organizationId).eq("role", "SUPER_ADMIN").eq("isActive", true);
+    if (superAdmins?.length) await admin.from("Notification").insert(superAdmins.map((a) => ({ id: crypto.randomUUID().replaceAll("-", ""), organizationId: project.organizationId, recipientId: a.id, type: "chat_violation", title: "Privacy policy violation blocked", body: `A message in a project chat was blocked for containing: ${violations.join(", ")}.`, entityType: "Project", entityId: projectId })));
     return NextResponse.json({ blocked: true, violations }, { status: 200 });
   }
 

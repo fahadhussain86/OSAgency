@@ -54,6 +54,7 @@ model Organization {
   members      Membership[]
   projects     Project[]
   auditLogs    AuditLog[]
+  notifications Notification[]
 }
 
 model Membership {
@@ -68,6 +69,7 @@ model Membership {
   assignedProjects Project[]    @relation("DeveloperAssignment")
   managedProjects  Project[]    @relation("ManagerAssignment")
   chatMessages     ChatMessage[]
+  notifications    Notification[]
 
   @@unique([organizationId, userId])
   @@index([organizationId, role])
@@ -155,6 +157,23 @@ model ChatMessage {
   author     Membership @relation(fields: [authorId], references: [id])
 
   @@index([projectId, createdAt])
+}
+
+model Notification {
+  id             String       @id @default(cuid())
+  organizationId String
+  recipientId    String
+  type           String
+  title          String
+  body           String?
+  entityType     String?
+  entityId       String?
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recipient      Membership   @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, isRead])
 }
 
 model AuditLog {

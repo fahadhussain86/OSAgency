@@ -41,5 +41,5 @@ export default async function Home() {
     workload = (developers ?? []).map((d) => ({ id: d.id, name: d.displayName, count: counts.get(d.id) ?? 0 }));
   }
 
-  return <DashboardClient displayName={membership.displayName} role={role} orgName={membership.organization?.name ?? "Workspace"} projects={projects} activity={activity} metrics={metrics} workload={workload} />;
+  return <DashboardClient membershipId={membership.id} displayName={membership.displayName} role={role} orgName={membership.organization?.name ?? "Workspace"} projects={projects} activity={activity} metrics={metrics} workload={workload} />;
 }
