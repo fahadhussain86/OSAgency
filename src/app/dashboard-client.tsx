@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Role, initials, navByRole, roleLabel, timeAgo } from "@/lib/roles";
 import NotificationsBell from "./notifications-bell";
@@ -35,7 +35,8 @@ const statusClass = (s: string) => s.toLowerCase().replaceAll("_", "-");
 export default function DashboardClient({ membershipId, displayName, role, orgName, projects, activity, metrics, workload }: { membershipId: string; displayName: string; role: Role; orgName: string; projects: ProjectRow[]; activity: ActivityItem[]; metrics: Metrics; workload: WorkloadRow[] }) {
   const router = useRouter();
   const [active, setActive] = useState("Overview");
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => typeof window !== "undefined" && localStorage.getItem("agencyos-theme") === "dark");
+  useEffect(() => { localStorage.setItem("agencyos-theme", dark ? "dark" : "light"); }, [dark]);
   const nav = navByRole[role];
   const isLead = role === "SUPER_ADMIN" || role === "PROJECT_MANAGER";
   const deadlines = projects.filter((p) => p.deadline).sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime()).slice(0, 3);
