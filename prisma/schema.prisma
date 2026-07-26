@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  PROJECT_MANAGER
+  SALES_AGENT
+  DEVELOPER
+}
+
+enum ProjectStatus {
+  INTAKE
+  PLANNING
+  IN_PROGRESS
+  IN_REVIEW
+  REVISION
+  COMPLETE
+  ON_HOLD
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum FileKind {
+  BRIEF
+  ASSET
+  CONTRACT
+  INVOICE
+  REFERENCE
+  DELIVERABLE
+  OTHER
+}
+
+model Organization {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  logoUrl      String?
+  primaryColor String       @default("#183d35")
+  featureFlags Json         @default("{}")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  members      Membership[]
+  projects     Project[]
+  auditLogs    AuditLog[]
+}
+
+model Membership {
+  id               String       @id @default(cuid())
+  organizationId   String
+  userId           String
+  displayName      String
+  role             Role
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedProjects Project[]    @relation("DeveloperAssignment")
+  managedProjects  Project[]    @relation("ManagerAssignment")
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  organizationId String
+  name           String
+  clientName     String
+  clientWebsite  String?
+  clientPhone    String?
+  packageName    String?
+  paymentStatus  String?
+  status         ProjectStatus @default(INTAKE)
+  priority       Priority      @default(MEDIUM)
+  requirements   String?
+  notes          String?
+  branding       Json          @default("{}")
+  references     Json          @default("[]")
+  deadline       DateTime?
+  googleMapsUrl  String?
+  demoUrl        String?
+  githubUrl      String?
+  vercelUrl      String?
+  revisionCount  Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  developerId    String?
+  developer      Membership?   @relation("DeveloperAssignment", fields: [developerId], references: [id])
+  managerId      String?
+  manager        Membership?   @relation("ManagerAssignment", fields: [managerId], references: [id])
+  files          ProjectFile[]
+  revisions      Revision[]
+  activities     Activity[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, deadline])
+}
+
+model ProjectFile {
+  id         String   @id @default(cuid())
+  projectId  String
+  kind       FileKind @default(OTHER)
+  name       String
+  storageKey String
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, storageKey, version])
+}
+
+model Revision {
+  id        String   @id @default(cuid())
+  projectId String
+  notes     String
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  projectId String
+  actorId   String
+  action    String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  actorId        String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+}
